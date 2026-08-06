@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FerialIG — Marketplace seguro de cuentas de Instagram</title>
+<meta name="description" content="FerialIG: compra y vende cuentas de Instagram de forma segura con pago protegido (escrow). Cuentas verificadas, sin estafas, con soporte real.">
+<meta name="keywords" content="comprar cuentas de instagram, comprar cuentas de instagram confiable, vender cuenta de instagram, marketplace de cuentas de redes sociales, cuentas de instagram en venta con garantia, escrow redes sociales">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#12131a; --bg-raised:#191b24; --paper:#f3f1ea; --ink:#eae8e1;
+    --ink-dim:#9b9ba6; --violet:#7c5cfc; --coral:#ff6b4a; --green:#34d399;
+    --amber:#e7b13b; --red:#ef5b5b; --line:#2a2c38;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:
+      linear-gradient(rgba(10,10,20,0.42), rgba(10,10,20,0.42)),
+      linear-gradient(160deg, #405DE6 0%, #5851DB 15%, #833AB4 35%, #C13584 55%, #E1306C 70%, #FD1D1D 82%, #F77737 92%, #FCAF45 100%);
+    background-attachment: fixed;
+    color:var(--ink); font-family:'Inter',sans-serif; margin:0; padding:0; min-height:100vh;
+  }
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif; font-weight:600; margin:0;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .app{max-width:640px; margin:0 auto; padding:20px 16px 60px;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;}
+  .logo{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px;}
+  .logo span{color:var(--coral);}
+  .userchip{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-dim); border:1px solid var(--line); padding:6px 12px; border-radius:100px; display:flex; align-items:center; gap:8px; background:rgba(18,19,26,0.6);}
+  .userchip button{background:none; border:none; color:var(--coral); font-family:inherit; font-size:12px; cursor:pointer; padding:0;}
+
+  .tabs{display:flex; gap:6px; margin-bottom:20px; border-bottom:1px solid var(--line);}
+  .tab{flex:1; text-align:center; padding:12px 6px; font-size:13px; font-weight:600; color:var(--ink-dim); cursor:pointer; border-bottom:2px solid transparent;}
+  .tab.active{color:var(--ink); border-bottom-color:var(--violet);}
+
+  .card{background:var(--bg-raised); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:14px;}
+  input,textarea,select{
+    width:100%; background:var(--bg); border:1px solid var(--line); color:var(--ink);
+    padding:11px 12px; border-radius:8px; font-family:'Inter',sans-serif; font-size:14px; margin-bottom:10px;
+  }
+  label{font-size:12px; color:var(--ink-dim); display:block; margin-bottom:5px; font-family:'IBM Plex Mono',monospace;}
+  .btn{
+    background:var(--violet); color:#fff; border:none; padding:12px 18px; border-radius:9px;
+    font-weight:600; font-size:14px; cursor:pointer; width:100%;
+  }
+  .btn.ghost{background:transparent; border:1px solid var(--line); color:var(--ink);}
+  .btn:disabled{opacity:0.5; cursor:not-allowed;}
+
+  .listing-title{font-size:16px; margin-bottom:4px;}
+  .listing-meta{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-dim); margin-bottom:10px;}
+  .price{font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; color:var(--green);}
+  .desc{font-size:13.5px; color:var(--ink-dim); margin-bottom:12px; line-height:1.5;}
+
+  .empty{text-align:center; color:var(--ink-dim); font-size:13.5px; padding:40px 20px;}
+
+  .rep{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--amber); margin-bottom:8px;}
+  .rep.new{color:var(--ink-dim);}
+
+  .receipt{
+    background:var(--paper); color:#1a1a1a; border-radius:6px;
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; padding:18px 16px; margin-bottom:14px;
+  }
+  .receipt-head{display:flex; justify-content:space-between; border-bottom:1px dashed #999; padding-bottom:10px; margin-bottom:10px;}
+  .receipt-head b{font-family:'Space Grotesk',sans-serif; font-size:13px;}
+  .receipt-row{display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dotted #ccc; font-size:11.5px;}
+  .status{font-weight:600;}
+  .status.ok{color:#0a7d4f;} .status.pending{color:#a8720b;} .status.dispute{color:#b13030;}
+  .steps-box{margin-top:12px; padding-top:10px; border-top:1px dashed #999;}
+  .step-line{display:flex; align-items:center; gap:8px; font-size:11.5px; padding:4px 0; color:#555;}
+  .step-line.done{color:#0a7d4f;}
+  .step-line .dot{width:7px; height:7px; border-radius:50%; background:#ccc;}
+  .step-line.done .dot{background:#0a7d4f;}
+  .receipt-actions{margin-top:12px; display:flex; gap:8px;}
+  .receipt-actions button{
+    font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600; padding:9px 12px;
+    border-radius:7px; border:none; cursor:pointer; flex:1;
+  }
+  .act-primary{background:#1a1a1a; color:#fff;}
+  .act-danger{background:#fbe4e4; color:#8a2020;}
+
+  .stars{display:flex; gap:4px; margin-top:8px;}
+  .stars span{font-size:20px; cursor:pointer; color:#ccc;}
+  .stars span.active{color:#e7b13b;}
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:var(--bg); padding:10px 18px; border-radius:100px;
+    font-size:13px; font-weight:600; z-index:50; opacity:0; transition:opacity 0.2s;
+  }
+  .toast.show{opacity:1;}
+  .hidden{display:none;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="logo">Ferial<span>IG</span></div>
+    <div id="userarea"></div>
+  </div>
+
+  <div id="login-screen" class="card hidden">
+    <h2 style="margin-bottom:10px;">Ingresá a FerialIG</h2>
+    <p style="font-size:13px; color:var(--ink-dim); margin-bottom:14px;">Poné un nombre de usuario para comprar o vender. No hace falta contraseña por ahora, es solo para identificarte en las operaciones.</p>
+    <label>Nombre de usuario</label>
+    <input id="login-name" placeholder="Ej: martin_rosas">
+    <button class="btn" onclick="doLogin()">Entrar</button>
+  </div>
+
+  <div id="main-app" class="hidden">
+    <div class="tabs">
+      <div class="tab active" data-tab="comprar" onclick="switchTab('comprar')">Comprar</div>
+      <div class="tab" data-tab="vender" onclick="switchTab('vender')">Vender</div>
+      <div class="tab" data-tab="operaciones" onclick="switchTab('operaciones')">Mis operaciones</div>
+      <div class="tab hidden" id="tab-btn-admin" data-tab="admin" onclick="switchTab('admin')">Admin</div>
+    </div>
+
+    <div id="tab-comprar"></div>
+    <div id="tab-vender" class="hidden"></div>
+    <div id="tab-operaciones" class="hidden"></div>
+    <div id="tab-admin" class="hidden"></div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://yhlsuvlxkaakkkraowur.supabase.co";
+const SUPABASE_KEY = "sb_publishable_1oQXVw2X4WgZU-MPmZkiNg_IX1iCmy6";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let ME = null;
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+async function init(){
+  const saved = localStorage.getItem('ferialig_me');
+  if(saved){
+    ME = saved;
+    renderLoggedIn();
+    await checkPagoReturn();
+    loadOperaciones();
+  } else {
+    document.getElementById('login-screen').classList.remove('hidden');
+  }
+}
+
+function doLogin(){
+  const name = document.getElementById('login-name').value.trim();
+  if(!name){ showToast('Escribí un nombre de usuario'); return; }
+  localStorage.setItem('ferialig_me', name);
+  ME = name;
+  document.getElementById('login-screen').classList.add('hidden');
+  renderLoggedIn();
+}
+
+function doLogout(){
+  localStorage.removeItem('ferialig_me');
+  ME = null;
+  document.getElementById('main-app').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('userarea').innerHTML = '';
+}
+
+function renderLoggedIn(){
+  document.getElementById('main-app').classList.remove('hidden');
+  document.getElementById('userarea').innerHTML =
+    `<div class="userchip">${ME} <button onclick="doLogout()">Salir</button></div>`;
+  if(ME.toLowerCase()==='admin'){
+    document.getElementById('tab-btn-admin').classList.remove('hidden');
+  }
+  loadComprar();
+  loadVender();
+  loadOperaciones();
+}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  document.getElementById('tab-comprar').classList.toggle('hidden', tab!=='comprar');
+  document.getElementById('tab-vender').classList.toggle('hidden', tab!=='vender');
+  document.getElementById('tab-operaciones').classList.toggle('hidden', tab!=='operaciones');
+  document.getElementById('tab-admin').classList.toggle('hidden', tab!=='admin');
+  if(tab==='comprar') loadComprar();
+  if(tab==='operaciones') loadOperaciones();
+  if(tab==='admin') loadAdmin();
+}
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ---------- VENDER ---------- */
+async function loadVender(){
+  const el = document.getElementById('tab-vender');
+  el.innerHTML = '<p class="empty">Revisando tu cuenta de Mercado Pago...</p>';
+  let connected = false;
+  try{
+    const r = await fetch('/api/mp-status?seller='+encodeURIComponent(ME));
+    const data = await r.json();
+    connected = !!data.connected;
+  }catch(e){ connected = false; }
+
+  if(!connected){
+    el.innerHTML = `
+      <div class="card">
+        <h2 style="margin-bottom:10px;">Conectá tu Mercado Pago</h2>
+        <p style="font-size:13px; color:var(--ink-dim); margin-bottom:14px;">Para publicar y cobrar tus ventas, primero conectá tu cuenta de Mercado Pago. El pago de tus compradores te va a llegar directo a vos, y FerialIG solo se queda con la comisión.</p>
+        <button class="btn" onclick="window.location.href='/api/mp-oauth-start?seller='+encodeURIComponent(ME)">Conectar Mercado Pago</button>
+      </div>
+    `;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="card">
+      <h2 style="margin-bottom:14px;">Publicar una cuenta</h2>
+      <label>Título</label>
+      <input id="f-title" placeholder="Ej: Cuenta de moda femenina, 20k seguidores">
+      <label>Nicho / temática</label>
+      <input id="f-niche" placeholder="Ej: moda, fitness, memes, cocina">
+      <label>Seguidores</label>
+      <input id="f-followers" type="number" placeholder="Ej: 20000">
+      <label>Precio (ARS)</label>
+      <input id="f-price" type="number" placeholder="Ej: 150000">
+      <label>Link del perfil de Instagram</label>
+      <input id="f-iglink" placeholder="Ej: instagram.com/tu_cuenta">
+      <label>Descripción</label>
+      <textarea id="f-desc" rows="3" placeholder="Contá el engagement, la antigüedad, si tiene monetización, etc."></textarea>
+      <label style="display:flex; align-items:flex-start; gap:8px; font-family:'Inter',sans-serif; font-size:12.5px; color:var(--ink-dim); margin-bottom:12px;">
+        <input type="checkbox" id="f-declare" style="width:auto; margin:2px 0 0;">
+        Declaro que esta cuenta me pertenece y que la información publicada es real. Sé que FerialIG puede revisarla antes de habilitar la venta.
+      </label>
+      <button class="btn" onclick="publicarListing()">Publicar cuenta</button>
+    </div>
+    <div id="mis-listings"></div>
+  `;
+  loadMisListings();
+}
+
+async function publicarListing(){
+  const title = document.getElementById('f-title').value.trim();
+  const niche = document.getElementById('f-niche').value.trim();
+  const followers = document.getElementById('f-followers').value.trim();
+  const price = document.getElementById('f-price').value.trim();
+  const iglink = document.getElementById('f-iglink').value.trim();
+  const description = document.getElementById('f-desc').value.trim();
+  const declared = document.getElementById('f-declare').checked;
+  if(!title || !price){ showToast('Completá al menos título y precio'); return; }
+  if(!iglink){ showToast('Sumá el link del perfil de Instagram'); return; }
+  if(!declared){ showToast('Tenés que confirmar que la cuenta es tuya'); return; }
+  const id = uid();
+  const { error } = await sb.from('listings').insert([{
+    id, seller: ME, title, niche, followers, price, iglink, description,
+    status:'disponible', verified:false, created_at: Date.now()
+  }]);
+  if(error){ showToast('No se pudo publicar: '+error.message); return; }
+  showToast('Cuenta publicada, queda pendiente de verificación');
+  document.getElementById('f-title').value='';
+  document.getElementById('f-niche').value='';
+  document.getElementById('f-followers').value='';
+  document.getElementById('f-price').value='';
+  document.getElementById('f-iglink').value='';
+  document.getElementById('f-desc').value='';
+  document.getElementById('f-declare').checked=false;
+  loadMisListings();
+}
+
+async function loadMisListings(){
+  const box = document.getElementById('mis-listings');
+  if(!box) return;
+  box.innerHTML = '<p class="empty">Cargando tus publicaciones...</p>';
+  const { data, error } = await sb.from('listings').select('*').eq('seller', ME).order('created_at', {ascending:false});
+  if(error){ box.innerHTML = '<p class="empty">No se pudieron cargar tus publicaciones.</p>'; return; }
+  if(!data || data.length===0){ box.innerHTML = '<p class="empty">Todavía no publicaste ninguna cuenta.</p>'; return; }
+  box.innerHTML = data.map(l=>`
+    <div class="card">
+      <div class="listing-title">${l.title}</div>
+      <div class="listing-meta">${l.niche || 'sin nicho'} · ${l.followers || '?'} seguidores · ${l.status==='disponible'?'Publicada':'Vendida'}</div>
+      <div class="rep ${l.verified?'':'new'}">${l.verified ? '✓ Verificada, visible para compradores' : 'Pendiente de verificación'}</div>
+      <div class="price">USD ${l.price}</div>
+    </div>
+  `).join('');
+}
+
+/* ---------- REPUTACION ---------- */
+async function sellerRepHtml(sellerName){
+  const { data } = await sb.from('transactions').select('rating').eq('seller', sellerName).not('rating','is',null);
+  const rated = data || [];
+  if(rated.length===0) return `<div class="rep new">Vendedor nuevo, todavía sin operaciones calificadas</div>`;
+  const avg = rated.reduce((s,t)=>s+t.rating,0) / rated.length;
+  return `<div class="rep">★ ${avg.toFixed(1)} (${rated.length} operación${rated.length>1?'es':''} calificada${rated.length>1?'s':''})</div>`;
+}
+
+/* ---------- COMPRAR ---------- */
+async function loadComprar(){
+  const el = document.getElementById('tab-comprar');
+  el.innerHTML = '<p class="empty">Buscando cuentas publicadas...</p>';
+  const { data, error } = await sb.from('listings').select('*').eq('status','disponible').eq('verified', true).order('created_at', {ascending:false});
+  if(error){ el.innerHTML = '<p class="empty">No se pudieron cargar las cuentas.</p>'; return; }
+  const items = (data || []).filter(l=>l.seller !== ME);
+  if(items.length===0){ el.innerHTML = '<p class="empty">Todavía no hay cuentas disponibles para comprar. Publicá una en la pestaña Vender, o volvé a entrar con otro usuario para probar el flujo completo.</p>'; return; }
+  const cardsHtml = await Promise.all(items.map(async l=>`
+    <div class="card">
+      <div class="listing-title">${l.title}</div>
+      <div class="listing-meta">${l.niche || 'sin nicho'} · ${l.followers || '?'} seguidores · vendedor: ${l.seller}</div>
+      ${await sellerRepHtml(l.seller)}
+      <div class="desc">${l.description || ''}</div>
+      <div class="price" style="margin-bottom:12px;">USD ${l.price}</div>
+      <button class="btn" onclick="comprar('${l.id}')">Comprar con pago protegido</button>
+    </div>
+  `));
+  el.innerHTML = cardsHtml.join('');
+}
+
+async function comprar(listingId){
+  const { data: l, error: e1 } = await sb.from('listings').select('*').eq('id', listingId).single();
+  if(e1 || !l){ showToast('Esa cuenta ya no está disponible'); return; }
+  if(l.status!=='disponible'){ showToast('Esa cuenta ya fue vendida'); return; }
+  const { error: e2 } = await sb.from('listings').update({status:'reservada'}).eq('id', listingId);
+  if(e2){ showToast('No se pudo iniciar la compra'); return; }
+  const txId = uid();
+  const { error: e3 } = await sb.from('transactions').insert([{
+    id: txId, listing_id: listingId, title: l.title, price: l.price,
+    buyer: ME, seller: l.seller, status: 'esperando_pago', created_at: Date.now()
+  }]);
+  if(e3){ showToast('No se pudo registrar la operación'); return; }
+
+  showToast('Redirigiendo a Mercado Pago...');
+  try{
+    const resp = await fetch('/api/create-preference', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ title: l.title, price: l.price, txId, seller: l.seller })
+    });
+    const data = await resp.json();
+    if(!resp.ok || !data.init_point){
+      showToast('No se pudo generar el pago. Avisale al admin.');
+      return;
+    }
+    window.location.href = data.init_point;
+  }catch(e){
+    showToast('No se pudo conectar con Mercado Pago');
+  }
+}
+
+async function checkPagoReturn(){
+  const params = new URLSearchParams(window.location.search);
+  const mp = params.get('mp');
+  if(mp){
+    window.history.replaceState({}, '', window.location.pathname);
+    if(mp==='conectado'){ showToast('Mercado Pago conectado correctamente'); }
+    else if(mp==='error'){ showToast('No se pudo conectar Mercado Pago, probá de nuevo'); }
+    loadVender();
+    return;
+  }
+  const pago = params.get('pago');
+  const tx = params.get('tx');
+  if(!pago || !tx) return;
+  window.history.replaceState({}, '', window.location.pathname);
+  if(pago==='aprobado'){
+    const { error } = await sb.from('transactions').update({status:'retenido'}).eq('id', tx);
+    if(!error){ showToast('Pago acreditado y retenido en FerialIG'); }
+  } else if(pago==='fallido'){
+    const { data: t } = await sb.from('transactions').select('*').eq('id', tx).single();
+    if(t){
+      await sb.from('transactions').update({status:'pago_fallido'}).eq('id', tx);
+      await sb.from('listings').update({status:'disponible'}).eq('id', t.listing_id);
+    }
+    showToast('El pago no se completó');
+  } else if(pago==='pendiente'){
+    showToast('Tu pago quedó pendiente de acreditación');
+  }
+}
+
+/* ---------- OPERACIONES ---------- */
+async function loadOperaciones(){
+  const el = document.getElementById('tab-operaciones');
+  el.innerHTML = '<p class="empty">Cargando tus operaciones...</p>';
+  const { data, error } = await sb.from('transactions').select('*').or(`buyer.eq.${ME},seller.eq.${ME}`).order('created_at', {ascending:false});
+  if(error){ el.innerHTML = '<p class="empty">No se pudieron cargar tus operaciones.</p>'; return; }
+  if(!data || data.length===0){ el.innerHTML = '<p class="empty">Todavía no tenés operaciones. Comprá o vendé una cuenta para ver acá el estado del pago protegido.</p>'; return; }
+  el.innerHTML = data.map(t=>renderReceipt(t)).join('');
+}
+
+function statusLabel(t){
+  if(t.status==='esperando_pago') return {text:'Esperando pago', cls:'pending'};
+  if(t.status==='pago_fallido') return {text:'Pago no completado', cls:'dispute'};
+  if(t.status==='retenido') return {text:'Pago retenido', cls:'pending'};
+  if(t.status==='transferido') return {text:'Transferencia marcada', cls:'pending'};
+  if(t.status==='liberado') return {text:'Pago liberado', cls:'ok'};
+  if(t.status==='disputa') return {text:'En disputa', cls:'dispute'};
+  if(t.status==='reembolsado') return {text:'Reembolsado', cls:'ok'};
+  return {text:t.status, cls:''};
+}
+
+function renderReceipt(t){
+  const isSeller = t.seller===ME;
+  const isBuyer = t.buyer===ME;
+  const s = statusLabel(t);
+  const step2 = t.status==='transferido' || t.status==='liberado';
+  const step3 = t.status==='liberado';
+
+  let actions = '';
+  if(isSeller && t.status==='retenido'){
+    actions = `<div class="receipt-actions">
+      <button class="act-primary" onclick="marcarTransferido('${t.id}')">Marcar cuenta transferida</button>
+    </div>`;
+  } else if(isBuyer && t.status==='transferido'){
+    actions = `<div class="receipt-actions">
+      <button class="act-primary" onclick="confirmarControl('${t.id}')">Confirmo que tengo el control</button>
+      <button class="act-danger" onclick="abrirDisputa('${t.id}')">Algo no coincide</button>
+    </div>`;
+  } else if(t.status==='liberado' && isBuyer && !t.rating){
+    actions = `<div class="steps-box">
+      <label style="margin-bottom:0;">Calificá al vendedor</label>
+      <div class="stars" id="stars-${t.id}">
+        ${[1,2,3,4,5].map(n=>`<span onclick="calificar('${t.id}',${n})">★</span>`).join('')}
+      </div>
+    </div>`;
+  } else if(t.status==='disputa'){
+    actions = `
+      <p style="font-size:11.5px; color:#b13030; margin:6px 0;">Caso en revisión. En un marketplace real esto lo resuelve soporte; acá lo pueden resolver entre ambos:</p>
+      <div class="receipt-actions">
+        <button class="act-primary" onclick="resolverDisputa('${t.id}','liberado')">Liberar al vendedor</button>
+        <button class="act-danger" onclick="resolverDisputa('${t.id}','reembolsado')">Reembolsar al comprador</button>
+      </div>`;
+  } else if(t.status==='reembolsado'){
+    actions = `<p style="font-size:11.5px; color:#555; margin-top:6px;">Disputa resuelta: se reembolsó al comprador.</p>`;
+  } else if(t.status==='pago_fallido'){
+    actions = `<p style="font-size:11.5px; color:#555; margin-top:6px;">El pago no se completó. La cuenta volvió a estar disponible.</p>`;
+  }
+
+  return `
+    <div class="receipt">
+      <div class="receipt-head"><b>FERIALIG</b><span>#${t.id.toUpperCase()}</span></div>
+      <div class="receipt-row"><span>${t.title}</span><span>USD ${t.price}</span></div>
+      <div class="receipt-row"><span>Comprador</span><span>${t.buyer}${isBuyer?' (vos)':''}</span></div>
+      <div class="receipt-row"><span>Vendedor</span><span>${t.seller}${isSeller?' (vos)':''}</span></div>
+      <div class="receipt-row"><span>Estado</span><span class="status ${s.cls}">${s.text}</span></div>
+      <div class="steps-box">
+        <div class="step-line done"><span class="dot"></span>Pago retenido por FerialIG</div>
+        <div class="step-line ${step2?'done':''}"><span class="dot"></span>Vendedor transfiere las credenciales</div>
+        <div class="step-line ${step3?'done':''}"><span class="dot"></span>Comprador confirma y se libera el pago</div>
+      </div>
+      ${actions}
+    </div>
+  `;
+}
+
+async function marcarTransferido(txId){
+  const { error } = await sb.from('transactions').update({status:'transferido'}).eq('id', txId);
+  if(error){ showToast('No se pudo actualizar'); return; }
+  showToast('Marcado como transferido');
+  loadOperaciones();
+}
+
+async function confirmarControl(txId){
+  const { error } = await sb.from('transactions').update({status:'liberado'}).eq('id', txId);
+  if(error){ showToast('No se pudo actualizar'); return; }
+  showToast('Pago liberado al vendedor');
+  loadOperaciones();
+}
+
+async function abrirDisputa(txId){
+  const { error } = await sb.from('transactions').update({status:'disputa'}).eq('id', txId);
+  if(error){ showToast('No se pudo actualizar'); return; }
+  showToast('Disputa abierta');
+  loadOperaciones();
+}
+
+async function resolverDisputa(txId, resultado){
+  const { data: t, error: e1 } = await sb.from('transactions').select('*').eq('id', txId).single();
+  if(e1 || !t){ showToast('No se pudo resolver la disputa'); return; }
+  const { error: e2 } = await sb.from('transactions').update({status:resultado}).eq('id', txId);
+  if(e2){ showToast('No se pudo resolver la disputa'); return; }
+  if(resultado==='reembolsado' && t.listing_id){
+    await sb.from('listings').update({status:'disponible'}).eq('id', t.listing_id);
+  }
+  showToast(resultado==='liberado' ? 'Pago liberado al vendedor' : 'Comprador reembolsado');
+  loadOperaciones();
+}
+
+async function calificar(txId, n){
+  const { error } = await sb.from('transactions').update({rating:n}).eq('id', txId);
+  if(error){ showToast('No se pudo guardar la calificación'); return; }
+  showToast('Gracias por calificar');
+  loadOperaciones();
+}
+
+/* ---------- ADMIN ---------- */
+async function loadAdmin(){
+  const el = document.getElementById('tab-admin');
+  el.innerHTML = '<p class="empty">Cargando publicaciones pendientes...</p>';
+  const { data, error } = await sb.from('listings').select('*').eq('verified', false).order('created_at', {ascending:true});
+  if(error){ el.innerHTML = '<p class="empty">No se pudieron cargar las publicaciones.</p>'; return; }
+  if(!data || data.length===0){ el.innerHTML = '<p class="empty">No hay publicaciones pendientes de verificación.</p>'; return; }
+  el.innerHTML = data.map(l=>`
+    <div class="card">
+      <div class="listing-title">${l.title}</div>
+      <div class="listing-meta">vendedor: ${l.seller} · ${l.followers || '?'} seguidores</div>
+      <div class="desc">Perfil declarado: ${l.iglink || 'sin link'}<br>${l.description || ''}</div>
+      <div class="price" style="margin-bottom:12px;">USD ${l.price}</div>
+      <button class="btn" onclick="verificarListing('${l.id}')">Marcar como verificada</button>
+    </div>
+  `).join('');
+}
+
+async function verificarListing(id){
+  const { error } = await sb.from('listings').update({verified:true}).eq('id', id);
+  if(error){ showToast('No se pudo verificar'); return; }
+  showToast('Publicación verificada');
+  loadAdmin();
+}
+
+init();
+</script>
+</body>
+</html>
