@@ -102,11 +102,21 @@
   </div>
 
   <div id="login-screen" class="card hidden">
-    <h2 style="margin-bottom:10px;">Ingresá a FerialIG</h2>
-    <p style="font-size:13px; color:var(--ink-dim); margin-bottom:14px;">Poné un nombre de usuario para comprar o vender. No hace falta contraseña por ahora, es solo para identificarte en las operaciones.</p>
-    <label>Nombre de usuario</label>
-    <input id="login-name" placeholder="Ej: martin_rosas">
-    <button class="btn" onclick="doLogin()">Entrar</button>
+    <h2 id="auth-title" style="margin-bottom:10px;">Ingresá a FerialIG</h2>
+    <p style="font-size:13px; color:var(--ink-dim); margin-bottom:14px;">Creá tu cuenta con email y contraseña para comprar o vender de forma segura.</p>
+    <div id="signup-only">
+      <label>Nombre de usuario</label>
+      <input id="login-username" placeholder="Ej: martin_rosas">
+    </div>
+    <label>Email</label>
+    <input id="login-email" type="email" placeholder="tu@email.com">
+    <label>Contraseña</label>
+    <input id="login-password" type="password" placeholder="Mínimo 6 caracteres">
+    <button class="btn" id="auth-submit-btn" onclick="doSignup()">Crear cuenta</button>
+    <p style="font-size:12.5px; color:var(--ink-dim); margin-top:12px; text-align:center;">
+      <span id="auth-switch-text">¿Ya tenés cuenta?</span>
+      <a href="#" onclick="toggleAuthMode(); return false;" style="color:var(--violet); font-weight:600;" id="auth-switch-link">Iniciar sesión</a>
+    </p>
   </div>
 
   <div id="main-app" class="hidden">
@@ -140,10 +150,12 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
+let isSignupMode = true;
+
 async function init(){
-  const saved = localStorage.getItem('ferialig_me');
-  if(saved){
-    ME = saved;
+  const { data } = await sb.auth.getSession();
+  if(data && data.session){
+    await setMeFromSession(data.session);
     renderLoggedIn();
     await checkPagoReturn();
     loadOperaciones();
@@ -152,17 +164,60 @@ async function init(){
   }
 }
 
-function doLogin(){
-  const name = document.getElementById('login-name').value.trim();
-  if(!name){ showToast('Escribí un nombre de usuario'); return; }
-  localStorage.setItem('ferialig_me', name);
-  ME = name;
-  document.getElementById('login-screen').classList.add('hidden');
-  renderLoggedIn();
+async function setMeFromSession(session){
+  const username = session.user.user_metadata && session.user.user_metadata.username;
+  ME = username || session.user.email.split('@')[0];
 }
 
-function doLogout(){
-  localStorage.removeItem('ferialig_me');
+function toggleAuthMode(){
+  isSignupMode = !isSignupMode;
+  document.getElementById('signup-only').classList.toggle('hidden', !isSignupMode);
+  document.getElementById('auth-title').textContent = isSignupMode ? 'Creá tu cuenta en FerialIG' : 'Ingresá a FerialIG';
+  document.getElementById('auth-submit-btn').textContent = isSignupMode ? 'Crear cuenta' : 'Iniciar sesión';
+  document.getElementById('auth-submit-btn').setAttribute('onclick', isSignupMode ? 'doSignup()' : 'doLoginPass()');
+  document.getElementById('auth-switch-text').textContent = isSignupMode ? '¿Ya tenés cuenta?' : '¿No tenés cuenta todavía?';
+  document.getElementById('auth-switch-link').textContent = isSignupMode ? 'Iniciar sesión' : 'Creá una';
+}
+
+async function doSignup(){
+  const username = document.getElementById('login-username').value.trim();
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if(!username){ showToast('Elegí un nombre de usuario'); return; }
+  if(!email || !password){ showToast('Completá email y contraseña'); return; }
+  if(password.length < 6){ showToast('La contraseña necesita al menos 6 caracteres'); return; }
+
+  const { data, error } = await sb.auth.signUp({
+    email, password,
+    options: { data: { username } }
+  });
+  if(error){ showToast(error.message); return; }
+
+  if(data.session){
+    await setMeFromSession(data.session);
+    document.getElementById('login-screen').classList.add('hidden');
+    renderLoggedIn();
+  } else {
+    showToast('Cuenta creada. Revisá tu email para confirmarla y después iniciá sesión.');
+    toggleAuthMode();
+  }
+}
+
+async function doLoginPass(){
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if(!email || !password){ showToast('Completá email y contraseña'); return; }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if(error){ showToast('Email o contraseña incorrectos'); return; }
+  await setMeFromSession(data.session);
+  document.getElementById('login-screen').classList.add('hidden');
+  renderLoggedIn();
+  await checkPagoReturn();
+  loadOperaciones();
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
   ME = null;
   document.getElementById('main-app').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');
