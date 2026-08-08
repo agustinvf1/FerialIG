@@ -282,7 +282,7 @@ async function loadMisListings(){
       <div class="listing-title">${l.title}</div>
       <div class="listing-meta">${l.niche || 'sin nicho'} · ${l.followers || '?'} seguidores · ${l.status==='disponible'?'Publicada':'Vendida'}</div>
       <div class="rep ${l.verified?'':'new'}">${l.verified ? '✓ Verificada, visible para compradores' : 'Pendiente de verificación'}</div>
-      <div class="price">USD ${l.price}</div>
+      <div class="price">ARS ${Number(l.price).toLocaleString("es-AR")}</div>
     </div>
   `).join('');
 }
@@ -310,7 +310,7 @@ async function loadComprar(){
       <div class="listing-meta">${l.niche || 'sin nicho'} · ${l.followers || '?'} seguidores · vendedor: ${l.seller}</div>
       ${await sellerRepHtml(l.seller)}
       <div class="desc">${l.description || ''}</div>
-      <div class="price" style="margin-bottom:12px;">USD ${l.price}</div>
+      <div class="price" style="margin-bottom:12px;">ARS ${Number(l.price).toLocaleString("es-AR")}</div>
       <button class="btn" onclick="comprar('${l.id}')">Comprar con pago protegido</button>
     </div>
   `));
@@ -438,7 +438,7 @@ function renderReceipt(t){
   return `
     <div class="receipt">
       <div class="receipt-head"><b>FERIALIG</b><span>#${t.id.toUpperCase()}</span></div>
-      <div class="receipt-row"><span>${t.title}</span><span>USD ${t.price}</span></div>
+      <div class="receipt-row"><span>${t.title}</span><span>ARS ${Number(t.price).toLocaleString("es-AR")}</span></div>
       <div class="receipt-row"><span>Comprador</span><span>${t.buyer}${isBuyer?' (vos)':''}</span></div>
       <div class="receipt-row"><span>Vendedor</span><span>${t.seller}${isSeller?' (vos)':''}</span></div>
       <div class="receipt-row"><span>Estado</span><span class="status ${s.cls}">${s.text}</span></div>
@@ -504,7 +504,7 @@ async function loadAdmin(){
       <div class="listing-title">${l.title}</div>
       <div class="listing-meta">vendedor: ${l.seller} · ${l.followers || '?'} seguidores</div>
       <div class="desc">Perfil declarado: ${l.iglink || 'sin link'}<br>${l.description || ''}</div>
-      <div class="price" style="margin-bottom:12px;">USD ${l.price}</div>
+      <div class="price" style="margin-bottom:12px;">ARS ${Number(l.price).toLocaleString("es-AR")}</div>
       <button class="btn" onclick="verificarListing('${l.id}')">Marcar como verificada</button>
     </div>
   `).join('');
@@ -516,9 +516,7 @@ async function verificarListing(id){
   showToast('Publicación verificada');
   loadAdmin();
 }
-  
 
-  
 init();
 </script>
 </body>
