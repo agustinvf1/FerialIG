@@ -117,6 +117,16 @@
       <span id="auth-switch-text">¿Ya tenés cuenta?</span>
       <a href="#" onclick="toggleAuthMode(); return false;" style="color:var(--violet); font-weight:600;" id="auth-switch-link">Iniciar sesión</a>
     </p>
+    <p id="forgot-pass-link" style="font-size:12.5px; color:var(--ink-dim); margin-top:8px; text-align:center; display:none;">
+      <a href="#" onclick="doForgotPassword(); return false;" style="color:var(--ink-dim); text-decoration:underline;">Olvidé mi contraseña</a>
+    </p>
+  </div>
+
+  <div id="reset-password-screen" class="card hidden">
+    <h2 style="margin-bottom:10px;">Elegí una nueva contraseña</h2>
+    <label>Nueva contraseña</label>
+    <input id="reset-password-input" type="password" placeholder="Mínimo 6 caracteres">
+    <button class="btn" onclick="doUpdatePassword()">Guardar nueva contraseña</button>
   </div>
 
   <div id="main-app" class="hidden">
@@ -150,9 +160,25 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
-let isSignupMode = true;
+let isSignupMode = false;
+
+sb.auth.onAuthStateChange((event, session) => {
+  if(event === 'PASSWORD_RECOVERY'){
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('main-app').classList.add('hidden');
+    document.getElementById('reset-password-screen').classList.remove('hidden');
+  }
+});
 
 async function init(){
+  document.getElementById('signup-only').classList.add('hidden');
+  document.getElementById('auth-title').textContent = 'Ingresá a FerialIG';
+  document.getElementById('auth-submit-btn').textContent = 'Iniciar sesión';
+  document.getElementById('auth-submit-btn').setAttribute('onclick', 'doLoginPass()');
+  document.getElementById('auth-switch-text').textContent = '¿No tenés cuenta todavía?';
+  document.getElementById('auth-switch-link').textContent = 'Creá una';
+  document.getElementById('forgot-pass-link').style.display = 'block';
+
   const { data } = await sb.auth.getSession();
   if(data && data.session){
     await setMeFromSession(data.session);
@@ -177,6 +203,28 @@ function toggleAuthMode(){
   document.getElementById('auth-submit-btn').setAttribute('onclick', isSignupMode ? 'doSignup()' : 'doLoginPass()');
   document.getElementById('auth-switch-text').textContent = isSignupMode ? '¿Ya tenés cuenta?' : '¿No tenés cuenta todavía?';
   document.getElementById('auth-switch-link').textContent = isSignupMode ? 'Iniciar sesión' : 'Creá una';
+  document.getElementById('forgot-pass-link').style.display = isSignupMode ? 'none' : 'block';
+}
+
+async function doForgotPassword(){
+  const email = document.getElementById('login-email').value.trim();
+  if(!email){ showToast('Escribí tu email arriba primero'); return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/'
+  });
+  if(error){ showToast(error.message); return; }
+  showToast('Te mandamos un email para restablecer tu contraseña');
+}
+
+async function doUpdatePassword(){
+  const newPass = document.getElementById('reset-password-input').value;
+  if(!newPass || newPass.length < 6){ showToast('La contraseña necesita al menos 6 caracteres'); return; }
+  const { error } = await sb.auth.updateUser({ password: newPass });
+  if(error){ showToast(error.message); return; }
+  showToast('Contraseña actualizada, ya podés usarla');
+  document.getElementById('reset-password-screen').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  toggleAuthMode();
 }
 
 async function doSignup(){
