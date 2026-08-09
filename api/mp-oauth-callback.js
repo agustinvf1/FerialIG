@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   const origin = req.headers.origin || `https://${req.headers.host}`;
 
   if (!code || !state) {
-    res.writeHead(302, { Location: `${origin}/?mp=error` });
+    res.writeHead(302, { Location: `${origin}/?mp=error&reason=faltan_parametros` });
     return res.end();
   }
 
@@ -24,11 +24,12 @@ export default async function handler(req, res) {
     const tokenData = await tokenResp.json();
 
     if (!tokenResp.ok) {
-      res.writeHead(302, { Location: `${origin}/?mp=error` });
+      const reason = encodeURIComponent(tokenData.message || tokenData.error || 'token_invalido');
+      res.writeHead(302, { Location: `${origin}/?mp=error&reason=${reason}` });
       return res.end();
     }
 
-    await fetch(`${process.env.SUPABASE_URL}/rest/v1/seller_accounts?on_conflict=username`, {
+    const insertResp = await fetch(`${process.env.SUPABASE_URL}/rest/v1/seller_accounts?on_conflict=username`, {
       method: 'POST',
       headers: {
         'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -45,10 +46,18 @@ export default async function handler(req, res) {
       })
     });
 
+    if (!insertResp.ok) {
+      const errText = await insertResp.text();
+      const reason = encodeURIComponent('supabase: ' + errText.slice(0, 150));
+      res.writeHead(302, { Location: `${origin}/?mp=error&reason=${reason}` });
+      return res.end();
+    }
+
     res.writeHead(302, { Location: `${origin}/?mp=conectado` });
     res.end();
   } catch (err) {
-    res.writeHead(302, { Location: `${origin}/?mp=error` });
+    const reason = encodeURIComponent(err.message || 'error_desconocido');
+    res.writeHead(302, { Location: `${origin}/?mp=error&reason=${reason}` });
     res.end();
   }
 }
