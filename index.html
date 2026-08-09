@@ -91,6 +91,7 @@
   }
   .toast.show{opacity:1;}
   .hidden{display:none;}
+  #terms-modal:not(.hidden){display:flex;}
 </style>
 </head>
 <body>
@@ -151,7 +152,7 @@
     <a href="#" onclick="document.getElementById('terms-modal').classList.remove('hidden'); return false;" style="color:var(--ink-dim); text-decoration:underline;">Términos de uso</a>
   </div>
 
-  <div id="terms-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; display:flex; align-items:flex-end; justify-content:center;">
+  <div id="terms-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; align-items:flex-end; justify-content:center;">
     <div class="card" style="max-width:600px; width:100%; margin:0; border-radius:16px 16px 0 0; max-height:80vh; overflow-y:auto;">
       <h2 style="margin-bottom:12px;">Términos de uso</h2>
       <div style="font-size:13px; color:var(--ink-dim); line-height:1.7;">
