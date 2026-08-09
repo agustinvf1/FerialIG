@@ -354,11 +354,14 @@ async function publicarListing(){
   const description = document.getElementById('f-desc').value.trim();
   const declared = document.getElementById('f-declare').checked;
   if(!title || !price){ showToast('Completá al menos título y precio'); return; }
+  if(Number(price) < 1000){ showToast('El precio mínimo es $1.000 ARS'); return; }
   if(!iglink){ showToast('Sumá el link del perfil de Instagram'); return; }
   if(!declared){ showToast('Tenés que confirmar que la cuenta es tuya'); return; }
+  const { data: { user } } = await sb.auth.getUser();
+  if(!user){ showToast('Iniciá sesión de nuevo'); return; }
   const id = uid();
   const { error } = await sb.from('listings').insert([{
-    id, seller: ME, title, niche, followers, price, iglink, description,
+    id, seller: ME, seller_id: user.id, title, niche, followers, price, iglink, description,
     status:'disponible', verified:false, created_at: Date.now()
   }]);
   if(error){ showToast('No se pudo publicar: '+error.message); return; }
@@ -421,24 +424,24 @@ async function loadComprar(){
 }
 
 async function comprar(listingId){
-  const { data: l, error: e1 } = await sb.from('listings').select('*').eq('id', listingId).single();
-  if(e1 || !l){ showToast('Esa cuenta ya no está disponible'); return; }
-  if(l.status!=='disponible'){ showToast('Esa cuenta ya fue vendida'); return; }
-  const { error: e2 } = await sb.from('listings').update({status:'reservada'}).eq('id', listingId);
-  if(e2){ showToast('No se pudo iniciar la compra'); return; }
-  const txId = uid();
-  const { error: e3 } = await sb.from('transactions').insert([{
-    id: txId, listing_id: listingId, title: l.title, price: l.price,
-    buyer: ME, seller: l.seller, status: 'esperando_pago', created_at: Date.now()
-  }]);
-  if(e3){ showToast('No se pudo registrar la operación'); return; }
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ showToast('Iniciá sesión de nuevo'); return; }
+
+  showToast('Procesando compra...');
+  const buyResp = await fetch('/api/buy-listing', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json', 'Authorization': 'Bearer '+session.access_token},
+    body: JSON.stringify({ listingId })
+  });
+  const buyData = await buyResp.json();
+  if(!buyResp.ok){ showToast(buyData.error || 'No se pudo iniciar la compra'); return; }
 
   showToast('Redirigiendo a Mercado Pago...');
   try{
     const resp = await fetch('/api/create-preference', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ title: l.title, price: l.price, txId, seller: l.seller })
+      body: JSON.stringify({ title: buyData.title, price: buyData.price, txId: buyData.txId, seller: buyData.sellerUsername })
     });
     const data = await resp.json();
     if(!resp.ok || !data.init_point){
@@ -614,8 +617,15 @@ async function loadAdmin(){
 }
 
 async function verificarListing(id){
-  const { error } = await sb.from('listings').update({verified:true}).eq('id', id);
-  if(error){ showToast('No se pudo verificar'); return; }
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ showToast('Iniciá sesión de nuevo'); return; }
+  const resp = await fetch('/api/admin-verify', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json', 'Authorization': 'Bearer '+session.access_token},
+    body: JSON.stringify({ listingId: id })
+  });
+  const data = await resp.json();
+  if(!resp.ok){ showToast(data.error || 'No se pudo verificar'); return; }
   showToast('Publicación verificada');
   loadAdmin();
 }
