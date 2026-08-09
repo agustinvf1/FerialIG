@@ -143,6 +143,27 @@
     <div id="tab-admin" class="hidden"></div>
   </div>
 
+  <div id="app-footer" class="hidden" style="text-align:center; padding:28px 0 10px; font-size:12px; color:var(--ink-dim);">
+    <a href="https://wa.me/5492923543999" target="_blank" style="color:var(--ink-dim); text-decoration:none;">💬 Soporte por WhatsApp</a>
+    &nbsp;·&nbsp;
+    <a href="faq.html" style="color:var(--ink-dim); text-decoration:none;">Preguntas frecuentes</a>
+    &nbsp;·&nbsp;
+    <a href="#" onclick="document.getElementById('terms-modal').classList.remove('hidden'); return false;" style="color:var(--ink-dim); text-decoration:underline;">Términos de uso</a>
+  </div>
+
+  <div id="terms-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; display:flex; align-items:flex-end; justify-content:center;">
+    <div class="card" style="max-width:600px; width:100%; margin:0; border-radius:16px 16px 0 0; max-height:80vh; overflow-y:auto;">
+      <h2 style="margin-bottom:12px;">Términos de uso</h2>
+      <div style="font-size:13px; color:var(--ink-dim); line-height:1.7;">
+        <p style="margin-bottom:10px;"><b>Qué es FerialIG:</b> somos un intermediario entre compradores y vendedores de cuentas de Instagram. Retenemos el pago hasta que el comprador confirma tener el control de la cuenta, y cobramos una comisión sobre la venta.</p>
+        <p style="margin-bottom:10px;"><b>Sobre las cuentas publicadas:</b> la información de cada cuenta (seguidores, engagement, antigüedad) es declarada por el vendedor. FerialIG revisa lo declarado antes de habilitar la venta, pero no puede garantizar el rendimiento futuro de la cuenta.</p>
+        <p style="margin-bottom:10px;"><b>Importante:</b> la compra y venta de cuentas puede estar en conflicto con las propias reglas de Instagram/Meta. Cada usuario es responsable de conocer y asumir ese riesgo antes de operar.</p>
+        <p style="margin-bottom:10px;"><b>Disputas:</b> si comprador y vendedor no llegan a un acuerdo dentro de la plataforma, pueden escribirnos por WhatsApp para que revisemos el caso.</p>
+      </div>
+      <button class="btn ghost" style="margin-top:16px;" onclick="document.getElementById('terms-modal').classList.add('hidden')">Cerrar</button>
+    </div>
+  </div>
+
   <div id="toast" class="toast"></div>
 </div>
 
@@ -268,12 +289,14 @@ async function doLogout(){
   await sb.auth.signOut();
   ME = null;
   document.getElementById('main-app').classList.add('hidden');
+  document.getElementById('app-footer').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('userarea').innerHTML = '';
 }
 
 function renderLoggedIn(){
   document.getElementById('main-app').classList.remove('hidden');
+  document.getElementById('app-footer').classList.remove('hidden');
   document.getElementById('userarea').innerHTML =
     `<div class="userchip">${ME} <button onclick="doLogout()">Salir</button></div>`;
   if(ME.toLowerCase()==='admin'){
