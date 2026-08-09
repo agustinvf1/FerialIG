@@ -457,7 +457,7 @@ async function checkPagoReturn(){
   if(mp){
     window.history.replaceState({}, '', window.location.pathname);
     if(mp==='conectado'){ showToast('Mercado Pago conectado correctamente'); }
-    else if(mp==='error'){ showToast('No se pudo conectar Mercado Pago, probá de nuevo'); }
+    else if(mp==='error'){ showToast('Error MP: ' + (params.get('reason') || 'desconocido')); }
     loadVender();
     return;
   }
