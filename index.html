@@ -58,6 +58,16 @@
   .rep{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--amber); margin-bottom:8px;}
   .rep.new{color:var(--ink-dim);}
 
+  .review-card{display:flex; gap:12px;}
+  .avatar-circle{
+    width:38px; height:38px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; color:#fff;
+  }
+  .review-stars{color:var(--amber); font-size:14px; letter-spacing:1px; margin-bottom:4px;}
+  .review-meta{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-dim); margin-bottom:6px;}
+  .review-comment{font-size:13.5px; color:var(--ink); line-height:1.5;}
+
   .receipt{
     background:var(--paper); color:#1a1a1a; border-radius:6px;
     font-family:'IBM Plex Mono',monospace; font-size:12.5px; padding:18px 16px; margin-bottom:14px;
@@ -135,12 +145,14 @@
       <div class="tab active" data-tab="comprar" onclick="switchTab('comprar')">Comprar</div>
       <div class="tab" data-tab="vender" onclick="switchTab('vender')">Vender</div>
       <div class="tab" data-tab="operaciones" onclick="switchTab('operaciones')">Mis operaciones</div>
+      <div class="tab" data-tab="opiniones" onclick="switchTab('opiniones')">Opiniones</div>
       <div class="tab hidden" id="tab-btn-admin" data-tab="admin" onclick="switchTab('admin')">Admin</div>
     </div>
 
     <div id="tab-comprar"></div>
     <div id="tab-vender" class="hidden"></div>
     <div id="tab-operaciones" class="hidden"></div>
+    <div id="tab-opiniones" class="hidden"></div>
     <div id="tab-admin" class="hidden"></div>
   </div>
 
@@ -313,9 +325,11 @@ function switchTab(tab){
   document.getElementById('tab-comprar').classList.toggle('hidden', tab!=='comprar');
   document.getElementById('tab-vender').classList.toggle('hidden', tab!=='vender');
   document.getElementById('tab-operaciones').classList.toggle('hidden', tab!=='operaciones');
+  document.getElementById('tab-opiniones').classList.toggle('hidden', tab!=='opiniones');
   document.getElementById('tab-admin').classList.toggle('hidden', tab!=='admin');
   if(tab==='comprar') loadComprar();
   if(tab==='operaciones') loadOperaciones();
+  if(tab==='opiniones') loadOpiniones();
   if(tab==='admin') loadAdmin();
 }
 
@@ -464,13 +478,92 @@ async function sellerRepHtml(sellerName){
 }
 
 /* ---------- COMPRAR ---------- */
+function avatarColor(name){
+  const colors = ['#7c5cfc','#ff6b4a','#34d399','#e7b13b','#E1306C','#405DE6'];
+  let hash = 0;
+  for(let i=0; i<name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+async function loadOpiniones(){
+  const el = document.getElementById('tab-opiniones');
+  el.innerHTML = '<p class="empty">Cargando opiniones...</p>';
+  const { data, error } = await sb.from('transactions').select('*').not('rating','is',null).order('created_at', {ascending:false});
+  if(error){ el.innerHTML = '<p class="empty">No se pudieron cargar las opiniones.</p>'; return; }
+  if(!data || data.length===0){
+    el.innerHTML = '<p class="empty">Todavía no hay opiniones. En cuanto se cierre la primera compra van a aparecer acá.</p>';
+    return;
+  }
+  el.innerHTML = data.map(t=>`
+    <div class="card review-card">
+      <div class="avatar-circle" style="background:${avatarColor(t.buyer||'?')}">${esc((t.buyer||'?').charAt(0).toUpperCase())}</div>
+      <div style="flex:1;">
+        <div class="review-stars">${'★'.repeat(t.rating)}${'☆'.repeat(5-t.rating)}</div>
+        <div class="review-meta">${esc(t.buyer)} compró "${esc(t.title)}"</div>
+        ${t.comment ? `<div class="review-comment">${esc(t.comment)}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+const HERO_BANNER = `
+<div style="background:var(--bg-raised); border:1px solid var(--line); border-radius:16px; padding:22px 18px; margin-bottom:16px; overflow:hidden; position:relative;">
+  <svg viewBox="0 0 600 190" style="width:100%; height:auto; display:block;" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="igGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#833AB4"/>
+        <stop offset="45%" stop-color="#E1306C"/>
+        <stop offset="75%" stop-color="#FD1D1D"/>
+        <stop offset="100%" stop-color="#FCAF45"/>
+      </linearGradient>
+      <radialGradient id="glow" cx="50%" cy="50%" r="60%">
+        <stop offset="0%" stop-color="#7c5cfc" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#7c5cfc" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="300" cy="95" rx="230" ry="90" fill="url(#glow)"/>
+
+    <g transform="translate(60,35)">
+      <rect x="0" y="0" width="86" height="120" rx="16" fill="#0e0f14" stroke="#2a2c38" stroke-width="2"/>
+      <rect x="8" y="12" width="70" height="86" rx="4" fill="#191b24"/>
+      <circle cx="43" cy="108" r="5" fill="#2a2c38"/>
+      <rect x="16" y="24" width="54" height="8" rx="4" fill="url(#igGrad)"/>
+      <rect x="16" y="38" width="38" height="6" rx="3" fill="#3a3c4a"/>
+      <rect x="16" y="50" width="46" height="6" rx="3" fill="#3a3c4a"/>
+      <circle cx="24" cy="70" r="8" fill="url(#igGrad)"/>
+      <rect x="38" y="66" width="26" height="6" rx="3" fill="#3a3c4a"/>
+      <rect x="38" y="76" width="20" height="6" rx="3" fill="#2a2c38"/>
+    </g>
+
+    <g transform="translate(454,35)">
+      <rect x="0" y="0" width="86" height="120" rx="16" fill="#0e0f14" stroke="#2a2c38" stroke-width="2"/>
+      <rect x="8" y="12" width="70" height="86" rx="4" fill="#191b24"/>
+      <circle cx="43" cy="108" r="5" fill="#2a2c38"/>
+      <circle cx="43" cy="35" r="16" fill="url(#igGrad)"/>
+      <path d="M35 35 l6 6 l12 -12" stroke="#0e0f14" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="16" y="62" width="54" height="6" rx="3" fill="#3a3c4a"/>
+      <rect x="16" y="74" width="40" height="6" rx="3" fill="#2a2c38"/>
+    </g>
+
+    <line x1="160" y1="95" x2="440" y2="95" stroke="#3a3c4a" stroke-width="2" stroke-dasharray="6 8"/>
+    <g transform="translate(268,68)">
+      <circle cx="32" cy="32" r="32" fill="#12131a" stroke="url(#igGrad)" stroke-width="3"/>
+      <path d="M18 32 l10 10 l18 -20" stroke="#34d399" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <text x="103" y="172" text-anchor="middle" fill="#9b9ba6" font-family="IBM Plex Mono, monospace" font-size="11">vendedor</text>
+    <text x="497" y="172" text-anchor="middle" fill="#9b9ba6" font-family="IBM Plex Mono, monospace" font-size="11">comprador</text>
+    <text x="300" y="150" text-anchor="middle" fill="#eae8e1" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600">pago retenido hasta confirmar</text>
+  </svg>
+</div>`;
+
 async function loadComprar(){
   const el = document.getElementById('tab-comprar');
-  el.innerHTML = '<p class="empty">Buscando cuentas publicadas...</p>';
+  el.innerHTML = HERO_BANNER + '<p class="empty">Buscando cuentas publicadas...</p>';
   const { data, error } = await sb.from('listings').select('*').eq('status','disponible').eq('verified', true).order('created_at', {ascending:false});
-  if(error){ el.innerHTML = '<p class="empty">No se pudieron cargar las cuentas.</p>'; return; }
+  if(error){ el.innerHTML = HERO_BANNER + '<p class="empty">No se pudieron cargar las cuentas.</p>'; return; }
   const items = (data || []).filter(l=>l.seller !== ME);
-  if(items.length===0){ el.innerHTML = '<p class="empty">Todavía no hay cuentas disponibles para comprar. Publicá una en la pestaña Vender, o volvé a entrar con otro usuario para probar el flujo completo.</p>'; return; }
+  if(items.length===0){ el.innerHTML = HERO_BANNER + '<p class="empty">Todavía no hay cuentas disponibles para comprar. Publicá una en la pestaña Vender, o volvé a entrar con otro usuario para probar el flujo completo.</p>'; return; }
   const cardsHtml = await Promise.all(items.map(async l=>{
     let images = [];
     try{ images = JSON.parse(l.images || '[]'); }catch(e){ images = []; }
@@ -491,7 +584,7 @@ async function loadComprar(){
     </div>
   `;
   }));
-  el.innerHTML = cardsHtml.join('');
+  el.innerHTML = HERO_BANNER + cardsHtml.join('');
 }
 
 async function comprar(listingId){
@@ -596,9 +689,11 @@ function renderReceipt(t){
   } else if(t.status==='liberado' && isBuyer && !t.rating){
     actions = `<div class="steps-box">
       <label style="margin-bottom:0;">Calificá al vendedor</label>
-      <div class="stars" id="stars-${t.id}">
-        ${[1,2,3,4,5].map(n=>`<span onclick="calificar('${t.id}',${n})">★</span>`).join('')}
+      <div class="stars" id="stars-${t.id}" data-selected="0">
+        ${[1,2,3,4,5].map(n=>`<span onclick="seleccionarEstrella('${t.id}',${n})" id="star-${t.id}-${n}">★</span>`).join('')}
       </div>
+      <textarea id="comment-${t.id}" rows="2" placeholder="Contá cómo fue tu experiencia (opcional)" style="margin-top:8px;"></textarea>
+      <button class="btn" style="margin-top:4px;" onclick="calificar('${t.id}')">Enviar reseña</button>
     </div>`;
   } else if(t.status==='disputa'){
     actions = `
@@ -663,8 +758,20 @@ async function resolverDisputa(txId, resultado){
   loadOperaciones();
 }
 
-async function calificar(txId, n){
-  const { error } = await sb.from('transactions').update({rating:n}).eq('id', txId);
+function seleccionarEstrella(txId, n){
+  const box = document.getElementById('stars-'+txId);
+  box.dataset.selected = n;
+  for(let i=1; i<=5; i++){
+    document.getElementById(`star-${txId}-${i}`).classList.toggle('active', i<=n);
+  }
+}
+
+async function calificar(txId){
+  const box = document.getElementById('stars-'+txId);
+  const n = Number(box.dataset.selected || 0);
+  if(!n){ showToast('Elegí un puntaje de estrellas primero'); return; }
+  const comment = document.getElementById('comment-'+txId).value.trim();
+  const { error } = await sb.from('transactions').update({rating:n, comment}).eq('id', txId);
   if(error){ showToast('No se pudo guardar la calificación'); return; }
   showToast('Gracias por calificar');
   loadOperaciones();
