@@ -358,15 +358,32 @@ async function loadVender(){
       <input id="f-iglink" placeholder="Ej: instagram.com/tu_cuenta">
       <label>Descripción</label>
       <textarea id="f-desc" rows="3" placeholder="Contá el engagement, la antigüedad, si tiene monetización, etc."></textarea>
+      <label>Fotos (hasta 3, opcional pero recomendado)</label>
+      <input id="f-images" type="file" accept="image/*" multiple style="margin-bottom:12px;">
       <label style="display:flex; align-items:flex-start; gap:8px; font-family:'Inter',sans-serif; font-size:12.5px; color:var(--ink-dim); margin-bottom:12px;">
         <input type="checkbox" id="f-declare" style="width:auto; margin:2px 0 0;">
         Declaro que esta cuenta me pertenece y que la información publicada es real. Sé que FerialIG puede revisarla antes de habilitar la venta.
       </label>
-      <button class="btn" onclick="publicarListing()">Publicar cuenta</button>
+      <button class="btn" id="publicar-btn" onclick="publicarListing()">Publicar cuenta</button>
     </div>
     <div id="mis-listings"></div>
   `;
   loadMisListings();
+}
+
+async function subirFotos(user){
+  const input = document.getElementById('f-images');
+  const files = Array.from(input.files || []).slice(0, 3);
+  const urls = [];
+  for(let i=0; i<files.length; i++){
+    const file = files[i];
+    const path = `${user.id}/${Date.now()}-${i}-${file.name}`;
+    const { error } = await sb.storage.from('listing-images').upload(path, file);
+    if(error){ continue; }
+    const { data } = sb.storage.from('listing-images').getPublicUrl(path);
+    if(data && data.publicUrl) urls.push(data.publicUrl);
+  }
+  return urls;
 }
 
 async function publicarListing(){
@@ -383,11 +400,19 @@ async function publicarListing(){
   if(!declared){ showToast('Tenés que confirmar que la cuenta es tuya'); return; }
   const { data: { user } } = await sb.auth.getUser();
   if(!user){ showToast('Iniciá sesión de nuevo'); return; }
+
+  const btn = document.getElementById('publicar-btn');
+  btn.disabled = true; btn.textContent = 'Subiendo fotos...';
+  const imageUrls = await subirFotos(user);
+  btn.textContent = 'Publicando...';
+
   const id = uid();
   const { error } = await sb.from('listings').insert([{
     id, seller: ME, seller_id: user.id, title, niche, followers, price, iglink, description,
+    images: JSON.stringify(imageUrls),
     status:'disponible', verified:false, created_at: Date.now()
   }]);
+  btn.disabled = false; btn.textContent = 'Publicar cuenta';
   if(error){ showToast('No se pudo publicar: '+error.message); return; }
   showToast('Cuenta publicada, queda pendiente de verificación');
   document.getElementById('f-title').value='';
@@ -396,6 +421,7 @@ async function publicarListing(){
   document.getElementById('f-price').value='';
   document.getElementById('f-iglink').value='';
   document.getElementById('f-desc').value='';
+  document.getElementById('f-images').value='';
   document.getElementById('f-declare').checked=false;
   loadMisListings();
 }
@@ -434,8 +460,17 @@ async function loadComprar(){
   if(error){ el.innerHTML = '<p class="empty">No se pudieron cargar las cuentas.</p>'; return; }
   const items = (data || []).filter(l=>l.seller !== ME);
   if(items.length===0){ el.innerHTML = '<p class="empty">Todavía no hay cuentas disponibles para comprar. Publicá una en la pestaña Vender, o volvé a entrar con otro usuario para probar el flujo completo.</p>'; return; }
-  const cardsHtml = await Promise.all(items.map(async l=>`
+  const cardsHtml = await Promise.all(items.map(async l=>{
+    let images = [];
+    try{ images = JSON.parse(l.images || '[]'); }catch(e){ images = []; }
+    const photoStrip = images.length > 0
+      ? `<div style="display:flex; gap:6px; margin-bottom:12px; overflow-x:auto;">
+          ${images.map(u=>`<img src="${u}" style="width:90px; height:90px; object-fit:cover; border-radius:8px; flex-shrink:0;">`).join('')}
+         </div>`
+      : '';
+    return `
     <div class="card">
+      ${photoStrip}
       <div class="listing-title">${l.title}</div>
       <div class="listing-meta">${l.niche || 'sin nicho'} · ${l.followers || '?'} seguidores · vendedor: ${l.seller}</div>
       ${await sellerRepHtml(l.seller)}
@@ -443,7 +478,8 @@ async function loadComprar(){
       <div class="price" style="margin-bottom:12px;">ARS ${Number(l.price).toLocaleString("es-AR")}</div>
       <button class="btn" onclick="comprar('${l.id}')">Comprar con pago protegido</button>
     </div>
-  `));
+  `;
+  }));
   el.innerHTML = cardsHtml.join('');
 }
 
@@ -520,6 +556,7 @@ async function loadOperaciones(){
 function statusLabel(t){
   if(t.status==='esperando_pago') return {text:'Esperando pago', cls:'pending'};
   if(t.status==='pago_fallido') return {text:'Pago no completado', cls:'dispute'};
+  if(t.status==='expirada') return {text:'Compra abandonada', cls:'dispute'};
   if(t.status==='retenido') return {text:'Pago retenido', cls:'pending'};
   if(t.status==='transferido') return {text:'Transferencia marcada', cls:'pending'};
   if(t.status==='liberado') return {text:'Pago liberado', cls:'ok'};
@@ -626,10 +663,19 @@ async function calificar(txId, n){
 async function loadAdmin(){
   const el = document.getElementById('tab-admin');
   el.innerHTML = '<p class="empty">Cargando publicaciones pendientes...</p>';
+
+  const releaseBtn = `
+    <div class="card">
+      <h2 style="margin-bottom:8px;">Reservas abandonadas</h2>
+      <p style="font-size:12.5px; color:var(--ink-dim); margin-bottom:12px;">Si alguien empieza a comprar y nunca termina de pagar, la cuenta queda reservada. Este botón libera las que llevan más de 30 minutos así.</p>
+      <button class="btn ghost" onclick="liberarReservas()">Liberar reservas abandonadas</button>
+    </div>
+  `;
+
   const { data, error } = await sb.from('listings').select('*').eq('verified', false).order('created_at', {ascending:true});
-  if(error){ el.innerHTML = '<p class="empty">No se pudieron cargar las publicaciones.</p>'; return; }
-  if(!data || data.length===0){ el.innerHTML = '<p class="empty">No hay publicaciones pendientes de verificación.</p>'; return; }
-  el.innerHTML = data.map(l=>`
+  if(error){ el.innerHTML = releaseBtn + '<p class="empty">No se pudieron cargar las publicaciones.</p>'; return; }
+  if(!data || data.length===0){ el.innerHTML = releaseBtn + '<p class="empty">No hay publicaciones pendientes de verificación.</p>'; return; }
+  el.innerHTML = releaseBtn + data.map(l=>`
     <div class="card">
       <div class="listing-title">${l.title}</div>
       <div class="listing-meta">vendedor: ${l.seller} · ${l.followers || '?'} seguidores</div>
@@ -638,6 +684,19 @@ async function loadAdmin(){
       <button class="btn" onclick="verificarListing('${l.id}')">Marcar como verificada</button>
     </div>
   `).join('');
+}
+
+async function liberarReservas(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ showToast('Iniciá sesión de nuevo'); return; }
+  const resp = await fetch('/api/release-stale', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json', 'Authorization': 'Bearer '+session.access_token}
+  });
+  const data = await resp.json();
+  if(!resp.ok){ showToast(data.error || 'No se pudo liberar'); return; }
+  showToast(data.released > 0 ? `Se liberaron ${data.released} reserva(s)` : 'No había reservas abandonadas');
+  loadAdmin();
 }
 
 async function verificarListing(id){
