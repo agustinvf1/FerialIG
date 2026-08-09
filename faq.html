@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preguntas frecuentes — FerialIG, marketplace seguro de cuentas de Instagram</title>
+<meta name="description" content="Todo sobre cómo comprar y vender cuentas de Instagram de forma segura en FerialIG: pago protegido, verificación de cuentas, comisiones y qué hacer si algo sale mal.">
+<meta name="keywords" content="comprar cuentas de instagram, comprar cuentas de instagram confiable, vender cuenta de instagram, marketplace de cuentas de redes sociales, cuentas de instagram en venta con garantia, escrow redes sociales, preguntas frecuentes ferialig">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12131a; --bg-raised:#191b24; --paper:#f3f1ea; --ink:#eae8e1;
+    --ink-dim:#9b9ba6; --violet:#7c5cfc; --coral:#ff6b4a; --green:#34d399;
+    --amber:#e7b13b; --line:#2a2c38;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:
+      linear-gradient(rgba(10,10,20,0.5), rgba(10,10,20,0.5)),
+      linear-gradient(160deg, #405DE6 0%, #5851DB 15%, #833AB4 35%, #C13584 55%, #E1306C 70%, #FD1D1D 82%, #F77737 92%, #FCAF45 100%);
+    background-attachment:fixed;
+    color:var(--ink); font-family:'Inter',sans-serif; line-height:1.55;
+  }
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif; font-weight:600; letter-spacing:-0.01em;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;}
+  .wrap{max-width:760px; margin:0 auto; padding:0 20px;}
+
+  nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 20px; position:sticky; top:0; z-index:10;
+    background:rgba(18,19,26,0.75); backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
+  }
+  .logo{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px;}
+  .logo span{color:var(--coral);}
+  .back-link{font-size:13px; color:var(--ink-dim); text-decoration:none; font-family:'IBM Plex Mono',monospace;}
+
+  /* HERO: pasaporte / trámite de aduana */
+  .hero{padding:60px 20px 40px; text-align:center; position:relative;}
+  .passport{
+    display:inline-block; background:var(--paper); color:#1a1a1a; border-radius:10px;
+    padding:22px 30px; max-width:420px; width:100%; position:relative;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.6); transform:rotate(-1.4deg);
+  }
+  .passport-head{
+    display:flex; justify-content:space-between; align-items:center;
+    border-bottom:2px solid #1a1a1a; padding-bottom:10px; margin-bottom:12px;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase;
+  }
+  .passport h1{font-size:22px; margin-bottom:6px;}
+  .passport p{font-size:12.5px; color:#555;}
+  .stamp{
+    position:absolute; top:-14px; right:-10px; width:88px; height:88px;
+    border:3px solid var(--green); border-radius:50%; color:var(--green);
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.05em;
+    transform:rotate(14deg); background:rgba(52,211,153,0.06);
+  }
+  .hero-sub{margin-top:24px; color:var(--ink-dim); font-size:14.5px; max-width:480px; margin-left:auto; margin-right:auto;}
+
+  /* FAQ list styled as inspection checklist */
+  .checklist{padding:20px 20px 70px;}
+  .item{
+    background:var(--bg-raised); border:1px solid var(--line); border-radius:12px;
+    margin-bottom:12px; overflow:hidden;
+  }
+  .item-head{
+    display:flex; align-items:center; gap:14px; padding:16px 18px; cursor:pointer;
+    user-select:none;
+  }
+  .item-num{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-dim);
+    border:1px solid var(--line); border-radius:6px; width:30px; height:30px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .item-q{font-size:15px; font-weight:600; flex:1;}
+  .item-chevron{color:var(--ink-dim); font-size:13px; transition:transform 0.2s; flex-shrink:0;}
+  .item.open .item-chevron{transform:rotate(180deg);}
+  .item-body{
+    max-height:0; overflow:hidden; transition:max-height 0.25s ease;
+  }
+  .item.open .item-body{max-height:400px;}
+  .item-body-inner{padding:0 18px 18px 62px; font-size:13.5px; color:var(--ink-dim);}
+
+  .cta-band{
+    text-align:center; padding:20px 20px 60px;
+  }
+  .cta-band a{
+    display:inline-block; background:var(--violet); color:#fff; padding:14px 28px;
+    border-radius:10px; font-weight:600; font-size:14.5px; text-decoration:none;
+    box-shadow:0 8px 24px rgba(124,92,252,0.35);
+  }
+  .cta-band p{color:var(--ink-dim); font-size:13px; margin-bottom:14px;}
+
+  footer{text-align:center; padding:30px 20px 50px; color:var(--ink-dim); font-size:12px;}
+
+  @media(max-width:480px){
+    .item-body-inner{padding-left:18px;}
+    .passport{transform:rotate(0);}
+    .stamp{right:10px;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Ferial<span>IG</span></div>
+  <a href="index.html" class="back-link">← Volver a FerialIG</a>
+</nav>
+
+<header class="hero">
+  <div class="passport">
+    <div class="passport-head">
+      <span>FerialIG</span>
+      <span>Manual de uso</span>
+    </div>
+    <h1>Preguntas frecuentes</h1>
+    <p>Todo lo que preguntan antes de comprar o vender una cuenta.</p>
+    <div class="stamp">VERIFICADO<br>FERIALIG</div>
+  </div>
+  <p class="hero-sub">Antes de que una cuenta cambie de manos, pasa por estos mismos controles. Acá te explicamos cada uno.</p>
+</header>
+
+<section class="checklist wrap" id="faq-list"></section>
+
+<div class="cta-band">
+  <p>¿Tenés otra duda que no está acá?</p>
+  <a href="https://wa.me/5492923543999" target="_blank">Escribinos por WhatsApp</a>
+</div>
+
+<footer>FerialIG — Marketplace seguro de cuentas de Instagram</footer>
+
+<script>
+const faqs = [
+  {
+    q: "¿Cómo sé que no me van a estafar?",
+    a: "Porque el pago nunca va directo al vendedor. Cuando comprás, tu pago queda retenido por FerialIG hasta que confirmás que tenés el control total de la cuenta (email, contraseña y 2FA transferidos). Recién ahí se libera el pago. Si algo no coincide, podés abrir una disputa antes de que el vendedor cobre."
+  },
+  {
+    q: "¿Qué pasa si la cuenta no es como la publicaron?",
+    a: "Antes de comprar, tenés a la vista el link del perfil, los seguidores y la descripción que declaró el vendedor, y esa publicación ya pasó por una revisión de FerialIG. Si aun así al recibirla algo no coincide, tocás \"Algo no coincide\" en tu operación: el pago queda en disputa y se revisa el caso antes de liberarlo al vendedor."
+  },
+  {
+    q: "¿Cuánto tarda en liberarse el pago?",
+    a: "Depende de vos: el pago se libera en el momento en que confirmás que tenés el control de la cuenta. No hay un plazo fijo de espera obligatorio, pero te recomendamos revisar bien (login, email de recuperación, 2FA) antes de confirmar."
+  },
+  {
+    q: "¿Qué comisión cobra FerialIG?",
+    a: "FerialIG se queda con un 10% del valor de la venta. El otro 90% va directo a la cuenta de Mercado Pago del vendedor apenas se libera el pago."
+  },
+  {
+    q: "¿Es legal comprar y vender cuentas de Instagram?",
+    a: "La compra y venta de cuentas puede estar en conflicto con las propias reglas de uso de Instagram/Meta, más allá de que no haya una ley que lo prohíba en general. FerialIG es un intermediario que protege el pago entre las partes; cada usuario es responsable de conocer y asumir ese riesgo antes de operar."
+  },
+  {
+    q: "¿Qué necesito para vender mi cuenta?",
+    a: "Conectar tu cuenta de Mercado Pago (para poder cobrar), y al publicar vas a tener que dejar el link del perfil de Instagram y declarar que la cuenta te pertenece. Tu publicación queda pendiente hasta que FerialIG la revisa y la habilita para la venta."
+  },
+  {
+    q: "¿Puedo cancelar una compra?",
+    a: "Si el vendedor todavía no transfirió las credenciales, podés abrir una disputa para que se revise y, si corresponde, se reembolse el pago. Una vez que confirmaste tener el control de la cuenta y se liberó el pago, la operación queda cerrada."
+  },
+  {
+    q: "¿Cómo contacto a soporte?",
+    a: "Por WhatsApp, con el botón de acá abajo o desde el pie de página dentro de la app. Lo usamos para los casos que comprador y vendedor no puedan resolver solos dentro de la plataforma."
+  }
+];
+
+const list = document.getElementById('faq-list');
+list.innerHTML = faqs.map((f, i) => `
+  <div class="item" id="item-${i}">
+    <div class="item-head" onclick="toggleItem(${i})">
+      <span class="item-num mono">${String(i+1).padStart(2,'0')}</span>
+      <span class="item-q">${f.q}</span>
+      <span class="item-chevron">▾</span>
+    </div>
+    <div class="item-body">
+      <div class="item-body-inner">${f.a}</div>
+    </div>
+  </div>
+`).join('');
+
+function toggleItem(i){
+  document.getElementById('item-'+i).classList.toggle('open');
+}
+</script>
+</body>
+</html>
