@@ -299,7 +299,7 @@ function renderLoggedIn(){
   document.getElementById('main-app').classList.remove('hidden');
   document.getElementById('app-footer').classList.remove('hidden');
   document.getElementById('userarea').innerHTML =
-    `<div class="userchip">${ME} <button onclick="doLogout()">Salir</button></div>`;
+    `<div class="userchip">${esc(ME)} <button onclick="doLogout()">Salir</button></div>`;
   if(ME.toLowerCase()==='admin'){
     document.getElementById('tab-btn-admin').classList.remove('hidden');
   }
@@ -320,6 +320,16 @@ function switchTab(tab){
 }
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function esc(str){
+  if(str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 /* ---------- VENDER ---------- */
 async function loadVender(){
@@ -397,6 +407,7 @@ async function publicarListing(){
   if(!title || !price){ showToast('Completá al menos título y precio'); return; }
   if(Number(price) < 1000){ showToast('El precio mínimo es $1.000 ARS'); return; }
   if(!iglink){ showToast('Sumá el link del perfil de Instagram'); return; }
+  if(!/instagram\.com\/[a-zA-Z0-9._]+/i.test(iglink)){ showToast('El link tiene que ser de instagram.com/tu_usuario'); return; }
   if(!declared){ showToast('Tenés que confirmar que la cuenta es tuya'); return; }
   const { data: { user } } = await sb.auth.getUser();
   if(!user){ showToast('Iniciá sesión de nuevo'); return; }
@@ -435,8 +446,8 @@ async function loadMisListings(){
   if(!data || data.length===0){ box.innerHTML = '<p class="empty">Todavía no publicaste ninguna cuenta.</p>'; return; }
   box.innerHTML = data.map(l=>`
     <div class="card">
-      <div class="listing-title">${l.title}</div>
-      <div class="listing-meta">${l.niche || 'sin nicho'} · ${l.followers || '?'} seguidores · ${l.status==='disponible'?'Publicada':'Vendida'}</div>
+      <div class="listing-title">${esc(l.title)}</div>
+      <div class="listing-meta">${esc(l.niche) || 'sin nicho'} · ${esc(l.followers) || '?'} seguidores · ${l.status==='disponible'?'Publicada':'Vendida'}</div>
       <div class="rep ${l.verified?'':'new'}">${l.verified ? '✓ Verificada, visible para compradores' : 'Pendiente de verificación'}</div>
       <div class="price">ARS ${Number(l.price).toLocaleString("es-AR")}</div>
     </div>
@@ -471,10 +482,10 @@ async function loadComprar(){
     return `
     <div class="card">
       ${photoStrip}
-      <div class="listing-title">${l.title}</div>
-      <div class="listing-meta">${l.niche || 'sin nicho'} · ${l.followers || '?'} seguidores · vendedor: ${l.seller}</div>
+      <div class="listing-title">${esc(l.title)}</div>
+      <div class="listing-meta">${esc(l.niche) || 'sin nicho'} · ${esc(l.followers) || '?'} seguidores · vendedor: ${esc(l.seller)}</div>
       ${await sellerRepHtml(l.seller)}
-      <div class="desc">${l.description || ''}</div>
+      <div class="desc">${esc(l.description) || ''}</div>
       <div class="price" style="margin-bottom:12px;">ARS ${Number(l.price).toLocaleString("es-AR")}</div>
       <button class="btn" onclick="comprar('${l.id}')">Comprar con pago protegido</button>
     </div>
@@ -605,9 +616,9 @@ function renderReceipt(t){
   return `
     <div class="receipt">
       <div class="receipt-head"><b>FERIALIG</b><span>#${t.id.toUpperCase()}</span></div>
-      <div class="receipt-row"><span>${t.title}</span><span>ARS ${Number(t.price).toLocaleString("es-AR")}</span></div>
-      <div class="receipt-row"><span>Comprador</span><span>${t.buyer}${isBuyer?' (vos)':''}</span></div>
-      <div class="receipt-row"><span>Vendedor</span><span>${t.seller}${isSeller?' (vos)':''}</span></div>
+      <div class="receipt-row"><span>${esc(t.title)}</span><span>ARS ${Number(t.price).toLocaleString("es-AR")}</span></div>
+      <div class="receipt-row"><span>Comprador</span><span>${esc(t.buyer)}${isBuyer?' (vos)':''}</span></div>
+      <div class="receipt-row"><span>Vendedor</span><span>${esc(t.seller)}${isSeller?' (vos)':''}</span></div>
       <div class="receipt-row"><span>Estado</span><span class="status ${s.cls}">${s.text}</span></div>
       <div class="steps-box">
         <div class="step-line done"><span class="dot"></span>Pago retenido por FerialIG</div>
@@ -677,9 +688,9 @@ async function loadAdmin(){
   if(!data || data.length===0){ el.innerHTML = releaseBtn + '<p class="empty">No hay publicaciones pendientes de verificación.</p>'; return; }
   el.innerHTML = releaseBtn + data.map(l=>`
     <div class="card">
-      <div class="listing-title">${l.title}</div>
-      <div class="listing-meta">vendedor: ${l.seller} · ${l.followers || '?'} seguidores</div>
-      <div class="desc">Perfil declarado: ${l.iglink || 'sin link'}<br>${l.description || ''}</div>
+      <div class="listing-title">${esc(l.title)}</div>
+      <div class="listing-meta">vendedor: ${esc(l.seller)} · ${esc(l.followers) || '?'} seguidores</div>
+      <div class="desc">Perfil declarado: ${esc(l.iglink) || 'sin link'}<br>${esc(l.description) || ''}</div>
       <div class="price" style="margin-bottom:12px;">ARS ${Number(l.price).toLocaleString("es-AR")}</div>
       <button class="btn" onclick="verificarListing('${l.id}')">Marcar como verificada</button>
     </div>
